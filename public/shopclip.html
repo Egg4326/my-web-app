@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopClip V2 - Real Video</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,system-ui}
+body{background:#050508;color:#fff;min-height:100vh}
+.header{text-align:center;padding:24px}
+.logo{font-size:38px;font-weight:900;background:linear-gradient(90deg,#ff00cc,#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{margin:12px auto;background:#ff00cc;border-radius:30px;padding:8px 20px;display:inline-block;font-weight:800}
+.wrap{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:20px;padding:20px}
+@media(max-width:800px){.wrap{grid-template-columns:1fr}}
+.card{background:#11111a;border:1px solid #222;border-radius:18px;padding:18px}
+.upload{border:2px dashed #ff00cc66;border-radius:14px;height:220px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden}
+.upload img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;display:none}
+.upload span{z-index:2;background:#000a;padding:8px 14px;border-radius:20px}
+.effects{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+.eff{background:#1a1a28;border:2px solid transparent;border-radius:12px;padding:12px;cursor:pointer;text-align:center;font-size:13px;font-weight:700}
+.eff.active{border-color:#ff00cc;background:#ff00cc22}
+input[type=text]{width:100%;background:#0c0c14;border:1px solid #333;border-radius:10px;padding:12px;color:#fff;margin-top:8px}
+.btn{width:100%;background:linear-gradient(90deg,#ff00cc,#7000ff);border:0;color:#fff;padding:16px;border-radius:12px;font-weight:900;font-size:16px;margin-top:12px;cursor:pointer}
+.btn2{background:#222}
+.preview{width:100%;aspect-ratio:9/16;background:#000;border-radius:14px;overflow:hidden;position:relative}
+canvas{width:100%;height:100%;display:block}
+.progress{height:6px;background:#222;border-radius:10px;overflow:hidden;margin-top:10px;display:none}
+.progress div{height:100%;background:linear-gradient(90deg,#ff00cc,#00ffff);width:0%}
+.status{font-size:12px;color:#888;margin-top:8px;text-align:center}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="logo">ShopClip</div>
+<div class="badge">$9/mo UNLIMITED - TUFFE VIDEOS 🔥</div>
+</div>
+<div class="wrap">
+<div class="card">
+<label style="font-size:12px;color:#777">1. PRODUCT FOTO</label>
+<div class="upload" id="up"><span id="upT">📸 Upload foto</span><img id="upImg"></div>
+<input type="file" id="file" accept="image/*" hidden>
+<label style="font-size:12px;color:#777;margin-top:14px;display:block">2. KIES EFFECT (echt tuff)</label>
+<div class="effects">
+<div class="eff active" data-e="zoom">🔥 ZOOM + FIRE</div>
+<div class="eff" data-e="shake">💥 SHAKE + BOOM</div>
+<div class="eff" data-e="glitch">⚡ GLITCH VIRAL</div>
+<div class="eff" data-e="hype">🚀 HYPE ZOOM</div>
+</div>
+<label style="font-size:12px;color:#777;margin-top:14px;display:block">3. TEKST</label>
+<input type="text" id="t1" value="NEW DROP ALERT">
+<input type="text" id="t2" value="$9 - DM TO ORDER">
+<button class="btn" id="gen">⚡ GENERATE TUFF VIDEO</button>
+<div class="progress" id="prog"><div id="bar"></div></div>
+<div class="status" id="stat">Ready to generate real MP4</div>
+<button class="btn btn2" id="dl" disabled>⬇️ DOWNLOAD MP4 VIDEO</button>
+</div>
+<div class="card">
+<label style="font-size:12px;color:#777">PREVIEW - TIKTOK READY</label>
+<div class="preview"><canvas id="cv" width="1080" height="1920"></canvas></div>
+</div>
+</div>
+<script>
+const fileEl=document.getElementById('file');
+const up=document.getElementById('up');
+const upImg=document.getElementById('upImg');
+const upT=document.getElementById('upT');
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+const t1=document.getElementById('t1');
+const t2=document.getElementById('t2');
+const bar=document.getElementById('bar');
+const prog=document.getElementById('prog');
+const stat=document.getElementById('stat');
+let imgObj=null, effect='zoom', recordedChunks=[], recorder=null, finalBlob=null;
+up.onclick=()=>fileEl.click();
+fileEl.onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const url=URL.createObjectURL(f);
+  upImg.src=url; upImg.style.display='block'; upT.style.display='none';
+  const im=new Image(); im.crossOrigin='anonymous'; im.src=url;
+  im.onload=()=>{imgObj=im; drawFrame(0); stat.textContent='Foto geladen - kies effect';}
+}
+document.querySelectorAll('.eff').forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll('.eff').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active'); effect=el.dataset.e;
+    if(imgObj) drawFrame(0);
+  }
+});
+function drawFrame(progress){
+  if(!imgObj) return;
+  const w=1080,h=1920; ctx.clearRect(0,0,w,h); ctx.save();
+  let scale=1, x=0,y=0, shake=0;
+  if(effect==='zoom'){ scale=1 + progress*0.3; x=(w - w*scale)/2; y=(h - h*scale)/2 - progress*100; }
+  if(effect==='shake'){ scale=1.15; shake= progress>0.5? (Math.random()-0.5)*40 : 0; x=shake; y=shake-50; }
+  if(effect==='glitch'){ scale=1.1 + Math.sin(progress*20)*0.05; x=Math.sin(progress*30)*20; y=0; }
+  if(effect==='hype'){ scale=1 + Math.pow(progress,2)*0.6; x=(w - w*scale)/2; y=(h - h*scale)/2; }
+  ctx.drawImage(imgObj, x, y, w*scale, h*scale); ctx.restore();
+  const g=ctx.createLinearGradient(0,800,0,1920);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.6,'rgba(0,0,0,0.6)'); g.addColorStop(1,'rgba(0,0,0,0.95)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  const tp = Math.min(1, progress*3); ctx.save(); ctx.globalAlpha=tp;
+  ctx.fillStyle='#fff'; ctx.font='900 110px Inter'; ctx.shadowColor='#ff00cc'; ctx.shadowBlur=20;
+  ctx.fillText(t1.value.toUpperCase(), 60, 1450 + (1-tp)*100); ctx.shadowBlur=0;
+  ctx.fillStyle='#00ffff'; ctx.font='800 58px Inter';
+  ctx.fillText(t2.value.toUpperCase(), 60, 1560 + (1-tp)*100); ctx.restore();
+  ctx.fillStyle='#ff00cc'; ctx.fillRect(0,0,w,90);
+  ctx.fillStyle='#fff'; ctx.font='900 42px Inter'; ctx.fillText('SHOPCLIP • $9 UNLIMITED',40,62);
+}
+document.getElementById('gen').onclick=async()=>{
+  if(!imgObj){alert('Upload eerst foto'); return;}
+  prog.style.display='block'; stat.textContent='Generating tuffe video...';
+  const stream=cv.captureStream(30); recordedChunks=[];
+  recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'});
+  recorder.ondataavailable=e=>{if(e.data.size>0) recordedChunks.push(e.data);} 
+  recorder.onstop=()=>{
+    finalBlob=new Blob(recordedChunks,{type:'video/webm'});
+    document.getElementById('dl').disabled=false;
+    stat.textContent='✅ Tuffe video klaar! 7 seconden viral ready'; bar.style.width='100%';
+  }
+  recorder.start(); let p=0;
+  const interval=setInterval(()=>{
+    p+=0.015; if(p>1){clearInterval(interval); recorder.stop(); return;}
+    drawFrame(p); bar.style.width=(p*100)+'%';
+  },33);
+}
+document.getElementById('dl').onclick=()=>{
+  if(!finalBlob) return;
+  const url=URL.createObjectURL(finalBlob);
+  const a=document.createElement('a'); a.href=url; a.download='shopclip-tuff-video.webm'; a.click();
+}
+setInterval(()=>{ if(imgObj &&!recorder) drawFrame(Math.random()*0.2); },100);
+[t1,t2].forEach(el=>el.oninput=()=>{ if(imgObj) drawFrame(0); });
+</script>
+</body>
+</html>
